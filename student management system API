@@ -1,0 +1,195 @@
+Question 1:
+import sqlite3
+
+# Connect to database
+conn = sqlite3.connect("student.db")
+
+# Create cursor
+cursor = conn.cursor()
+
+# Create students table
+cursor.execute("""
+CREATE TABLE students (
+    id INTEGER,
+    name TEXT,
+    age INTEGER,
+    gender TEXT,
+    city TEXT,
+    created_at DATETIME
+)
+""")
+
+# Insert sample data
+cursor.execute("INSERT INTO students VALUES (1,'Priya',18,'Female','Chennai',datetime('now'))")
+cursor.execute("INSERT INTO students VALUES (2,'Arjun',19,'Male','Coimbatore',datetime('now'))")
+
+# Save changes
+conn.commit()
+
+# Display data
+cursor.execute("SELECT * FROM students")
+
+rows = cursor.fetchall()
+
+for row in rows:
+    print(row)
+
+# Close connection
+conn.close()
+
+Question 2:
+
+import sqlite3
+
+# Connect to database
+conn = sqlite3.connect("student.db")
+
+# Create cursor
+cursor = conn.cursor()
+
+# Create subjects table
+cursor.execute("""
+CREATE TABLE subjects (
+    id INTEGER,
+    subject_name TEXT
+)
+""")
+
+# Insert data
+cursor.execute("INSERT INTO subjects VALUES (1, 'Math')")
+cursor.execute("INSERT INTO subjects VALUES (2, 'Science')")
+cursor.execute("INSERT INTO subjects VALUES (3, 'English')")
+cursor.execute("INSERT INTO subjects VALUES (4, 'Computer Science')")
+
+# Save changes
+conn.commit()
+
+# Display data
+cursor.execute("SELECT * FROM subjects")
+
+rows = cursor.fetchall()
+
+for row in rows:
+    print(row)
+
+# Close connection
+conn.close()
+
+Question 3:
+phase 1:
+import sqlite3
+
+# Connect to database
+conn = sqlite3.connect("student.db")
+
+# Create cursor
+cursor = conn.cursor()
+
+# Create marks table
+cursor.execute("""
+CREATE TABLE marks (
+    id INTEGER,
+    student_id INTEGER,
+    subject_id INTEGER,
+    marks INTEGER
+)
+""")
+
+# Insert marks for Student 1 (Priya)
+cursor.execute("INSERT INTO marks VALUES (1, 1, 1, 90)")
+cursor.execute("INSERT INTO marks VALUES (2, 1, 2, 85)")
+cursor.execute("INSERT INTO marks VALUES (3, 1, 3, 92)")
+
+# Save changes
+conn.commit()
+
+# Display data
+cursor.execute("SELECT * FROM marks")
+
+rows = cursor.fetchall()
+
+for row in rows:
+    print(row)
+
+# Close connection
+conn.close()
+ 
+Phase 2:
+API 1:
+import sqlite3
+
+# Get student details
+name = input("Enter Name: ")
+age = int(input("Enter Age: "))
+gender = input("Enter Gender: ")
+city = input("Enter City: ")
+
+# Validation
+if name == "":
+    print("Name cannot be empty")
+
+elif age < 15 or age > 25:
+    print("Age must be between 15 and 25")
+
+elif gender != "Male" and gender != "Female" and gender != "Other":
+    print("Invalid gender")
+
+else:
+    conn = sqlite3.connect("student.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO students(name, age, gender, city, created_at)
+        VALUES (?, ?, ?, ?, datetime('now'))
+    """, (name, age, gender, city))
+
+    conn.commit()
+
+    print("Student created")
+    print("Student ID:", cursor.lastrowid)
+
+    conn.close()
+
+API 2:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("SELECT id, name FROM students")
+
+students = cursor.fetchall()
+
+for student in students:
+    print("ID:", student[0])
+    print("Name:", student[1])
+    print("----------------")
+
+conn.close()
+
+API 3:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+# Enter student ID
+student_id = int(input("Enter Student ID: "))
+
+# Get student details
+cursor.execute("SELECT * FROM students WHERE id = ?", (student_id,))
+
+student = cursor.fetchone()
+
+if student:
+    print("ID:", student[0])
+    print("Name:", student[1])
+    print("Age:", student[2])
+    print("Gender:", student[3])
+    print("City:", student[4])
+    print("Created At:", student[5])
+else:
+    print("Student not found")
+
+conn.close()
+
