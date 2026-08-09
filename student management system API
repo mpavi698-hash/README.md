@@ -193,3 +193,436 @@ else:
 
 conn.close()
 
+API 4:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+# Enter student ID
+student_id = int(input("Enter Student ID to delete: "))
+
+# Delete student
+cursor.execute("DELETE FROM students WHERE id = ?", (student_id,))
+
+conn.commit()
+
+if cursor.rowcount > 0:
+    print("Student deleted")
+else:
+    print("Student not found")
+
+conn.close()
+
+API 5:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+# Enter student ID
+student_id = int(input("Enter Student ID: "))
+
+# Enter new details
+name = input("Enter New Name: ")
+age = int(input("Enter New Age: "))
+gender = input("Enter New Gender: ")
+city = input("Enter New City: ")
+
+# Update student
+cursor.execute("""
+UPDATE students
+SET name = ?, age = ?, gender = ?, city = ?
+WHERE id = ?
+""", (name, age, gender, city, student_id))
+
+conn.commit()
+
+if cursor.rowcount > 0:
+    print("Student updated")
+else:
+    print("Student not found")
+
+conn.close()
+
+PHASE 3:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+subject = input("Enter Subject Name: ")
+
+# Check duplicate
+cursor.execute("SELECT * FROM subjects WHERE subject_name = ?", (subject,))
+data = cursor.fetchone()
+
+if data:
+    print("Subject already exists")
+else:
+    cursor.execute("INSERT INTO subjects(subject_name) VALUES(?)", (subject,))
+    conn.commit()
+    print("Subject added")
+
+conn.close()
+
+AND:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("SELECT * FROM subjects")
+
+subjects = cursor.fetchall()
+
+for subject in subjects:
+    print("ID:", subject[0])
+    print("Subject:", subject[1])
+    print("----------------")
+
+conn.close()
+
+PHASE 4:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+student_id = int(input("Enter Student ID: "))
+subject_id = int(input("Enter Subject ID: "))
+marks = int(input("Enter Marks: "))
+
+# Check marks range
+if marks < 0 or marks > 100:
+    print("Marks should be between 0 and 100")
+
+else:
+    # Check student
+    cursor.execute("SELECT * FROM students WHERE id = ?", (student_id,))
+    student = cursor.fetchone()
+
+    if student == None:
+        print("Student not found")
+
+    else:
+        # Check subject
+        cursor.execute("SELECT * FROM subjects WHERE id = ?", (subject_id,))
+        subject = cursor.fetchone()
+
+        if subject == None:
+            print("Subject not found")
+
+        else:
+            # Insert marks
+            cursor.execute(
+                "INSERT INTO marks(student_id, subject_id, marks) VALUES(?,?,?)",
+                (student_id, subject_id, marks)
+            )
+
+            conn.commit()
+
+            print("Marks added")
+
+conn.close()
+
+PHASE 5:
+STUDENT REPORT CARD:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+student_id = int(input("Enter Student ID: "))
+
+cursor.execute("""
+SELECT students.name, subjects.subject_name, marks.marks
+FROM marks
+JOIN students ON students.id = marks.student_id
+JOIN subjects ON subjects.id = marks.subject_id
+WHERE students.id = ?
+""", (student_id,))
+
+data = cursor.fetchall()
+
+total = 0
+
+for row in data:
+    print(row[1], ":", row[2])
+    total = total + row[2]
+
+print("Total =", total)
+
+if len(data) > 0:
+    print("Average =", total / len(data))
+
+conn.close()
+
+CLASS TOPPERS:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+SELECT students.name, AVG(marks.marks)
+FROM students
+JOIN marks ON students.id = marks.student_id
+GROUP BY students.id
+ORDER BY AVG(marks.marks) DESC
+LIMIT 1
+""")
+
+topper = cursor.fetchone()
+
+print("Topper:", topper[0])
+print("Average:", topper[1])
+
+conn.close()
+
+FAILED STUDENTS:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+SELECT students.name, subjects.subject_name, marks.marks
+FROM marks
+JOIN students ON students.id = marks.student_id
+JOIN subjects ON subjects.id = marks.subject_id
+WHERE marks.marks < 40
+""")
+
+data = cursor.fetchall()
+
+for row in data:
+    print("Student:", row[0])
+    print("Subject:", row[1])
+    print("Marks:", row[2])
+    print()
+
+conn.close()
+
+SUBJECT TOPPERS:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+subject = input("Enter Subject Name: ")
+
+cursor.execute("""
+SELECT students.name, marks.marks
+FROM marks
+JOIN students ON students.id = marks.student_id
+JOIN subjects ON subjects.id = marks.subject_id
+WHERE subjects.subject_name = ?
+ORDER BY marks.marks DESC
+LIMIT 1
+""", (subject,))
+
+data = cursor.fetchone()
+
+print("Student:", data[0])
+print("Marks:", data[1])
+
+conn.close()
+
+RANKING OF STUDENTS:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+SELECT students.name, AVG(marks.marks)
+FROM students
+JOIN marks ON students.id = marks.student_id
+GROUP BY students.id
+ORDER BY AVG(marks.marks) DESC
+""")
+
+data = cursor.fetchall()
+
+rank = 1
+
+for row in data:
+    print("Rank:", rank)
+    print("Name:", row[0])
+    print("Average:", row[1])
+    print()
+    rank = rank + 1
+
+conn.close()
+
+PHASE 6:
+SEARCH BY NAME:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+name = input("Enter Name: ")
+
+cursor.execute("SELECT * FROM students WHERE name LIKE ?", ('%' + name + '%',))
+
+students = cursor.fetchall()
+
+for student in students:
+    print(student)
+
+conn.close()
+
+SEARCH BY CITY:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+city = input("Enter City: ")
+
+cursor.execute("SELECT * FROM students WHERE city = ?", (city,))
+
+students = cursor.fetchall()
+
+for student in students:
+    print(student)
+
+conn.close()
+
+PHASE 7:
+SORT BY NAME:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("SELECT * FROM students ORDER BY name")
+
+students = cursor.fetchall()
+
+for student in students:
+    print(student)
+
+conn.close()
+
+SORT BY AGE:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("SELECT * FROM students ORDER BY age")
+
+students = cursor.fetchall()
+
+for student in students:
+    print(student)
+
+conn.close()
+
+PHASE 8:
+EXPORT REPORT:
+import sqlite3
+import csv
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("SELECT * FROM students")
+
+data = cursor.fetchall()
+
+file = open("report.csv", "w", newline="")
+
+writer = csv.writer(file)
+
+writer.writerow(["ID", "Name", "Age", "Gender", "City", "Created At"])
+
+for row in data:
+    writer.writerow(row)
+
+file.close()
+
+conn.close()
+
+print("Report exported to report.csv")
+
+PAGINATION:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+page = int(input("Enter Page Number: "))
+limit = int(input("Enter Limit: "))
+
+offset = (page - 1) * limit
+
+cursor.execute(
+    "SELECT * FROM students LIMIT ? OFFSET ?",
+    (limit, offset)
+)
+
+students = cursor.fetchall()
+
+for student in students:
+    print(student)
+
+conn.close()
+
+AUDIO LOGS:
+CREATE LOGS TABLE:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS logs(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action TEXT,
+    created_at TEXT
+)
+""")
+
+conn.commit()
+
+conn.close()
+
+print("Logs table created")
+
+ADD LOGS:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+action = input("Enter Action: ")
+
+cursor.execute(
+    "INSERT INTO logs(action, created_at) VALUES(?, datetime('now'))",
+    (action,)
+)
+
+conn.commit()
+
+print("Log Added")
+
+conn.close()
+
+VIEW LOGS:
+import sqlite3
+
+conn = sqlite3.connect("student.db")
+cursor = conn.cursor()
+
+cursor.execute("SELECT * FROM logs")
+
+logs = cursor.fetchall()
+
+for log in logs:
+    print(log)
+
+conn.close()

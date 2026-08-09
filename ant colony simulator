@@ -1,0 +1,213 @@
+import math
+import random
+import time
+
+WIDTH = 100
+HEIGHT = 100
+
+# ---------------- PATCH ----------------
+class Patch:
+    def __init__(self):
+        self.home_pheromone = 0.0
+        self.food_pheromone = 0.0
+        self.seeds = 0
+
+grid = [[Patch() for _ in range(WIDTH)] for _ in range(HEIGHT)]
+
+# ---------------- UTIL ----------------
+def wrap(x, y):
+    return x % WIDTH, y % HEIGHT
+
+def toroidal_distance(x1, y1, x2, y2):
+    dx = abs(x1 - x2)
+    dy = abs(y1 - y2)
+
+    dx = min(dx, WIDTH - dx)
+    dy = min(dy, HEIGHT - dy)
+
+    return math.sqrt(dx**2 + dy**2)
+
+# ---------------- NEST ----------------
+NEST_X = WIDTH // 2
+NEST_Y = HEIGHT // 2
+NEST_RADIUS = 4
+
+nest_food_storage = 0
+
+def is_in_nest(x, y):
+    return toroidal_distance(x, y, NEST_X, NEST_Y) <= NEST_RADIUS
+
+# ---------------- FOOD ----------------
+def spawn_food(piles=4):
+    total = 0
+    for _ in range(piles):
+        cx = random.randint(0, WIDTH - 1)
+        cy = random.randint(0, HEIGHT - 1)
+
+        for y in range(HEIGHT):
+            for x in range(WIDTH):
+                if toroidal_distance(x, y, cx, cy) <= 2:
+                    seeds = random.randint(1, 5)
+                    grid[y][x].seeds += seeds
+                    total += seeds
+    return total
+
+# ---------------- ANT ----------------
+class Ant:
+    def __init__(self):
+        self.x = float(NEST_X)
+        self.y = float(NEST_Y)
+        self.heading = random.uniform(0, 360)
+
+        self.energy = 600
+        self.social_stomach = 200
+
+        self.home_capacity = 10.0
+        self.food_capacity = 10.0
+
+        self.has_seed = False
+        self.state = "FORAGING"
+
+# ---------------- MOVEMENT ----------------
+def move_ant(ant):
+    rad = math.radians(ant.heading)
+    ant.x, ant.y = wrap(ant.x + math.cos(rad), ant.y + math.sin(rad))
+
+def random_walk(ant):
+    move_ant(ant)
+
+    r = random.randint(0, 99)
+    if r < 10:
+        ant.heading -= random.uniform(0, 30)
+    elif r >= 90:
+        ant.heading += random.uniform(0, 30)
+
+    ant.heading %= 360
+
+# ---------------- PHEROMONES ----------------
+def deposit_pheromone(ant):
+    x, y = int(ant.x), int(ant.y)
+    patch = grid[y][x]
+
+    if ant.state == "FORAGING":
+        ant.home_capacity *= 0.9
+        patch.home_pheromone += ant.home_capacity
+    else:
+        ant.food_capacity *= 0.9
+        patch.food_pheromone += ant.food_capacity
+
+def evaporate():
+    for row in grid:
+        for patch in row:
+            patch.home_pheromone *= 0.99
+            patch.food_pheromone *= 0.99
+
+# ---------------- SENSING ----------------
+def sense_pheromone(ant):
+    best_value = 0
+    best_angle = None
+
+    for d in [1, 2, 3]:
+        for offset in [0, 45, -45]:
+            angle = (ant.heading + offset) % 360
+            rad = math.radians(angle)
+
+            x = int((ant.x + d * math.cos(rad)) % WIDTH)
+            y = int((ant.y + d * math.sin(rad)) % HEIGHT)
+
+            patch = grid[y][x]
+
+            value = patch.food_pheromone if ant.state == "FORAGING" else patch.home_pheromone
+
+            if value > best_value:
+                best_value = value
+                best_angle = angle
+
+    if best_value > 0:
+        ant.heading = best_angle
+        move_ant(ant)
+    else:
+        random_walk(ant)
+
+# ---------------- FOOD INTERACTION ----------------
+def interact_food(ant):
+    global nest_food_storage
+
+    x, y = int(ant.x), int(ant.y)
+
+    if not ant.has_seed:
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                nx, ny = wrap(x + dx, y + dy)
+                if grid[ny][nx].seeds > 0:
+                    grid[ny][nx].seeds -= 1
+                    ant.has_seed = True
+                    ant.state = "RETURNING"
+                    ant.heading = (ant.heading + 180) % 360
+                    return
+
+    if ant.has_seed and is_in_nest(x, y):
+        ant.has_seed = False
+        ant.state = "FORAGING"
+        nest_food_storage += 1
+        ant.home_capacity = 10
+        ant.food_capacity = 10
+
+# ---------------- ENERGY ----------------
+def update_energy(ant):
+    global nest_food_storage
+
+    ant.energy -= 1
+
+    if ant.energy <= 0:
+        return False
+
+    if is_in_nest(int(ant.x), int(ant.y)) and ant.energy < 100 and nest_food_storage >= 2:
+        nest_food_storage -= 2
+        ant.energy = 600
+
+    return True
+
+# ---------------- SIMULATION ----------------
+def run_simulation():
+    global nest_food_storage
+    nest_food_storage = 0
+
+    ants = [Ant() for _ in range(100)]
+    total_food = spawn_food()
+
+    print("Total Food:", total_food)
+
+    for tick in range(10000):
+        alive = []
+
+        for ant in ants:
+            sense_pheromone(ant)
+            deposit_pheromone(ant)
+            interact_food(ant)
+
+            if update_energy(ant):
+                alive.append(ant)
+
+        ants = alive
+        evaporate()
+
+        if len(ants) == 0:
+            print("❌ All ants died")
+            break
+
+        if nest_food_storage >= total_food:
+            print("✅ All food collected")
+            break
+
+        if tick % 50 == 0:
+            print(f"Tick: {tick} | Ants: {len(ants)} | Food: {nest_food_storage}")
+
+        time.sleep(0.01)
+
+    print("\n--- RESULTS ---")
+    print("Steps:", tick)
+    print("Survival %:", (len(ants)/100)*100)
+
+# ---------------- RUN ----------------
+run_simulation()
