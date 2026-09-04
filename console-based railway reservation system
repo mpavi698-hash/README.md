@@ -1,0 +1,195 @@
+import random
+
+class Train:
+    def __init__(self, train_number, name, source, destination, total_seats, fare):
+        self.train_number = train_number
+        self.name = name
+        self.source = source
+        self.destination = destination
+        self.total_seats = total_seats
+        self.available_seats = total_seats
+        self.fare = fare
+
+    def display_details(self):
+        print(f"| {self.train_number:<8} | {self.name:<20} | {self.source:<12} | {self.destination:<12} | {self.available_seats:<15} | ₹{self.fare:<6} |")
+
+class Ticket:
+    def __init__(self, pnr, train, passenger_name, passenger_age, seats_booked):
+        self.pnr = pnr
+        self.train = train
+        self.passenger_name = passenger_name
+        self.passenger_age = passenger_age
+        self.seats_booked = seats_booked
+        self.total_fare = train.fare * seats_booked
+
+class RailwaySystem:
+    def __init__(self):
+        self.trains = {}
+        self.tickets = {}
+        self._seed_initial_data()
+
+    def _seed_initial_data(self):
+        # Sample initial train routes
+        sample_trains = [
+            Train("12626", "Kerala Express", "New Delhi", "Trivandrum", 50, 850),
+            Train("12002", "Shatabdi Express", "New Delhi", "Bhopal", 40, 1100),
+            Train("12952", "Rajdhani Express", "Mumbai", "New Delhi", 30, 2100)
+        ]
+        for train in sample_trains:
+            self.trains[train.train_number] = train
+
+    def display_all_trains(self):
+        if not self.trains:
+            print("\n[!] No trains available.")
+            return
+
+        print("\n" + "=" * 82)
+        print(f"| {'Train No':<8} | {'Train Name':<20} | {'Source':<12} | {'Destination':<12} | {'Available Seats':<15} | {'Fare':<7} |")
+        print("=" * 82)
+        for train in self.trains.values():
+            train.display_details()
+        print("=" * 82)
+
+    def add_train(self):
+        print("\n--- Admin: Add New Train ---")
+        train_num = input("Enter Train Number: ").strip()
+        if train_num in self.trains:
+            print("[!] Train with this number already exists.")
+            return
+
+        name = input("Enter Train Name: ").strip()
+        source = input("Enter Source Station: ").strip()
+        destination = input("Enter Destination Station: ").strip()
+        
+        try:
+            total_seats = int(input("Enter Total Seats: "))
+            fare = float(input("Enter Ticket Fare (₹): "))
+        except ValueError:
+            print("[!] Invalid input. Seats and Fare must be numbers.")
+            return
+
+        self.trains[train_num] = Train(train_num, name, source, destination, total_seats, fare)
+        print(f"[✓] Train '{name}' added successfully.")
+
+    def book_ticket(self):
+        print("\n--- Book Ticket ---")
+        self.display_all_trains()
+        train_num = input("Enter Train Number to book: ").strip()
+
+        if train_num not in self.trains:
+            print("[!] Invalid Train Number.")
+            return
+
+        train = self.trains[train_num]
+        
+        try:
+            seats = int(input(f"Enter number of seats (Available: {train.available_seats}): "))
+        except ValueError:
+            print("[!] Please enter a valid number of seats.")
+            return
+
+        if seats <= 0:
+            print("[!] Seats count must be greater than zero.")
+            return
+
+        if seats > train.available_seats:
+            print("[!] Sorry, requested seats exceed availability.")
+            return
+
+        passenger_name = input("Enter Passenger Name: ").strip()
+        try:
+            passenger_age = int(input("Enter Passenger Age: "))
+        except ValueError:
+            print("[!] Invalid age entered.")
+            return
+
+        # Generate unique 6-digit PNR
+        pnr = str(random.randint(100000, 999999))
+        while pnr in self.tickets:
+            pnr = str(random.randint(100000, 999999))
+
+        # Deduct seats & save ticket
+        train.available_seats -= seats
+        ticket = Ticket(pnr, train, passenger_name, passenger_age, seats)
+        self.tickets[pnr] = ticket
+
+        print("\n" + "*" * 40)
+        print("         BOOKING CONFIRMED          ")
+        print("*" * 40)
+        print(f"PNR Number    : {pnr}")
+        print(f"Passenger Name: {passenger_name}")
+        print(f"Train         : {train.name} ({train.train_number})")
+        print(f"Route         : {train.source} -> {train.destination}")
+        print(f"Seats Booked  : {seats}")
+        print(f"Total Amount  : ₹{ticket.total_fare:.2f}")
+        print("*" * 40)
+
+    def cancel_ticket(self):
+        print("\n--- Cancel Ticket ---")
+        pnr = input("Enter PNR Number to cancel: ").strip()
+
+        if pnr not in self.tickets:
+            print("[!] Ticket not found for this PNR.")
+            return
+
+        ticket = self.tickets[pnr]
+        ticket.train.available_seats += ticket.seats_booked
+        del self.tickets[pnr]
+
+        print(f"[✓] Ticket with PNR {pnr} has been successfully canceled.")
+        print(f"[i] Refund Amount: ₹{ticket.total_fare:.2f}")
+
+    def check_pnr_status(self):
+        print("\n--- Check PNR Status ---")
+        pnr = input("Enter PNR Number: ").strip()
+
+        if pnr not in self.tickets:
+            print("[!] Invalid PNR or Ticket has been canceled.")
+            return
+
+        ticket = self.tickets[pnr]
+        print("\n" + "-" * 40)
+        print(f"PNR Status    : CONFIRMED")
+        print(f"Passenger     : {ticket.passenger_name} (Age: {ticket.passenger_age})")
+        print(f"Train         : {ticket.train.name} ({ticket.train.train_number})")
+        print(f"Route         : {ticket.train.source} to {ticket.train.destination}")
+        print(f"Seats Booked  : {ticket.seats_booked}")
+        print(f"Total Paid    : ₹{ticket.total_fare:.2f}")
+        print("-" * 40)
+
+
+def main():
+    system = RailwaySystem()
+
+    while True:
+        print("\n" + "=" * 35)
+        print("  RAILWAY RESERVATION SYSTEM  ")
+        print("=" * 35)
+        print("1. Display All Trains")
+        print("2. Book Ticket")
+        print("3. Cancel Ticket")
+        print("4. Check PNR Status")
+        print("5. Admin: Add Train")
+        print("6. Exit")
+        
+        choice = input("\nEnter your choice (1-6): ").strip()
+
+        if choice == '1':
+            system.display_all_trains()
+        elif choice == '2':
+            system.book_ticket()
+        elif choice == '3':
+            system.cancel_ticket()
+        elif choice == '4':
+            system.check_pnr_status()
+        elif choice == '5':
+            system.add_train()
+        elif choice == '6':
+            print("\nThank you for using the Railway Reservation System. Safe travels!")
+            break
+        else:
+            print("\n[!] Invalid option. Please select a choice between 1 and 6.")
+
+
+if __name__ == "__main__":
+    main()
